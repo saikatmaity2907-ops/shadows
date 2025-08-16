@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Brex Support Chatbot</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f4f4f9; display: flex; justify-content: center; align-items: center; height: 100vh; }
+    .chatbox { width: 350px; background: white; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); padding: 15px; display: flex; flex-direction: column; }
+    .messages { flex: 1; overflow-y: auto; margin-bottom: 10px; }
+    .msg { padding: 8px; margin: 4px 0; border-radius: 8px; }
+    .user { background: #0070f3; color: white; text-align: right; }
+    .bot { background: #eee; text-align: left; }
+    input { padding: 8px; border-radius: 8px; border: 1px solid #ccc; width: 80%; }
+    button { padding: 8px; border: none; background: #0070f3; color: white; border-radius: 8px; cursor: pointer; }
+    button:hover { background: #005bb5; }
+  </style>
+</head>
+<body>
+  <div class="chatbox">
+    <div class="messages" id="messages"></div>
+    <div>
+      <input type="text" id="userInput" placeholder="Type your issue..." />
+      <button onclick="sendMessage()">Send</button>
+    </div>
+  </div>
+
+  <script>
+    const messagesDiv = document.getElementById("messages");
+
+    function appendMessage(text, sender) {
+      const msg = document.createElement("div");
+      msg.className = "msg " + sender;
+      msg.innerText = text;
+      messagesDiv.appendChild(msg);
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+
+    function sendMessage() {
+      const input = document.getElementById("userInput");
+      const text = input.value.trim();
+      if (!text) return;
+
+      appendMessage(text, "user");
+      input.value = "";
+
+      setTimeout(() => botReply(text), 500);
+    }
+
+    function botReply(userText) {
+      const commonQuestions = {
+        "reset password": "🔑 You can reset your password from Settings → Security → Reset Password.",
+        "card blocked": "💳 If your card is blocked, go to Cards → Unblock Card.",
+        "transaction issue": "📊 Please check your Transactions page for details. If unauthorized, raise a ticket.",
+        "loan": "🏦 Brex currently does not provide personal loans. Only business credit and spend management.",
+        "contact support": "📞 You can call support at +1-800-BREX or continue here."
+      };
+
+      let found = null;
+      for (let key in commonQuestions) {
+        if (userText.toLowerCase().includes(key)) {
+          found = commonQuestions[key];
+          break;
+        }
+      }
+
+      if (found) {
+        appendMessage(found, "bot");
+      } else {
+        // If AI can't solve → Raise Ticket
+        const ticketId = "TICKET-" + Math.floor(Math.random() * 10000);
+        appendMessage("⚠️ I couldn’t solve this. Raising a support ticket... Your Ticket ID is: " + ticketId, "bot");
+      }
+    }
+  </script>
+</body>
+</html>
