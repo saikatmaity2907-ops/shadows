@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Brex Notifications Prototype</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f4f4f9; display: flex; justify-content: center; align-items: center; height: 100vh; }
+    .container { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 350px; text-align: center; }
+    h2 { color: #0070f3; }
+    .option { text-align: left; margin: 8px 0; }
+    button { margin-top: 15px; padding: 10px; width: 100%; background: #0070f3; color: white; border: none; border-radius: 8px; cursor: pointer; }
+    button:hover { background: #005bb5; }
+    #message { margin-top: 12px; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Brex Notification Settings</h2>
+    <p>Select the notifications you want to receive:</p>
+
+    <div class="option">
+      <input type="checkbox" id="payments" checked> Payments Updates 💳
+    </div>
+    <div class="option">
+      <input type="checkbox" id="transactions"> Transaction Alerts 📊
+    </div>
+    <div class="option">
+      <input type="checkbox" id="security"> Security Alerts 🔒
+    </div>
+    <div class="option">
+      <input type="checkbox" id="offers"> Special Offers 🎁
+    </div>
+
+    <button onclick="savePreferences()">Save Preferences</button>
+    <p id="message"></p>
+  </div>
+
+  <script>
+    function savePreferences() {
+      const preferences = {
+        payments: document.getElementById("payments").checked,
+        transactions: document.getElementById("transactions").checked,
+        security: document.getElementById("security").checked,
+        offers: document.getElementById("offers").checked
+      };
+
+      // Save in browser localStorage (mock saving for demo)
+      localStorage.setItem("brexPreferences", JSON.stringify(preferences));
+
+      document.getElementById("message").innerText = "✅ Preferences saved!";
+
+      // Simulate push notification based on preferences
+      setTimeout(() => {
+        let notifMessage = "🔔 Brex Notifications:\n";
+        if (preferences.payments) notifMessage += "- Payment received: $200\n";
+        if (preferences.transactions) notifMessage += "- Transaction at airindia: $50\n";
+        if (preferences.security) notifMessage += "- Security Alert: New login from Chrome\n";
+        if (preferences.offers) notifMessage += "- 🎉 Special Offer: Cashback on rupay cards\n";
+        
+        alert(notifMessage);
+      }, 2000);
+    }
+
+    // Load saved preferences on page load
+    window.onload = () => {
+      const saved = localStorage.getItem("brexPreferences");
+      if (saved) {
+        const prefs = JSON.parse(saved);
+        document.getElementById("payments").checked = prefs.payments;
+        document.getElementById("transactions").checked = prefs.transactions;
+        document.getElementById("security").checked = prefs.security;
+        document.getElementById("offers").checked = prefs.offers;
+      }
+    };
+  </script>
+</body>
+</html>
