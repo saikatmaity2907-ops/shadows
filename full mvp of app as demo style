@@ -1,0 +1,800 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Brex-style MVP — Working Prototype</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<style>
+:root{
+  --bg:#071019; --card:#0f1316; --muted:#98a3a8; --text:#e9eef0; --accent:#ff6f1a;
+  --glass: rgba(255,255,255,0.03);
+  --radius:12px;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:linear-gradient(180deg,#071019,#071a22);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+
+/* header */
+.header{display:flex;justify-content:space-between;align-items:center;padding:14px 28px;background:linear-gradient(180deg,rgba(2,6,10,0.45),transparent);position:sticky;top:0;z-index:80}
+.brand{display:flex;gap:12px;align-items:center}
+.logo{width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,#111315,#1b1f22);display:grid;place-items:center;color:var(--accent);font-weight:800}
+.header nav{display:flex;gap:14px;align-items:center}
+.btn-cta{background:var(--accent);color:#071018;padding:8px 12px;border-radius:999px;border:none;font-weight:700;cursor:pointer}
+
+/* hero */
+.hero{display:grid;grid-template-columns:1fr 420px;gap:24px;padding:44px 32px;align-items:center}
+.h-title{font-size:30px;margin:0 0 6px 0}
+.h-sub{color:var(--muted);margin:0 0 14px 0}
+.hero-illus{background:linear-gradient(180deg,#091116,#071018);border-radius:12px;padding:18px;border:1px solid rgba(255,255,255,0.03)}
+
+/* features */
+.features{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;padding:22px 32px}
+.feature-card{background:linear-gradient(180deg,#0f1416,#0c0f11);padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,0.03);display:flex;flex-direction:column;gap:8px;align-items:center}
+.feature-card i{color:var(--accent);font-size:22px}
+
+/* rewards highlight */
+.rewards-hero{padding:18px 32px;border-radius:12px;margin:18px 32px;background:linear-gradient(90deg,#fffaf0,#fff7ea);color:#222;border:1px solid rgba(255,111,26,0.12);display:flex;justify-content:space-between;align-items:center}
+.progress{width:60%;height:12px;background:#eee;border-radius:99px;overflow:hidden}
+.progress .bar{height:100%;background:var(--accent);width:0%;transition:width 1.6s}
+
+/* app shell */
+.app-section{padding:18px 32px}
+.app-shell{display:flex;gap:12px;align-items:flex-start}
+.sidebar{width:240px;background:linear-gradient(180deg,#071016,#061113);border-radius:12px;padding:14px;border:1px solid rgba(255,255,255,0.03);min-height:68vh;color:var(--muted)}
+.side-logo{display:flex;gap:10px;align-items:center;margin-bottom:12px}
+.menu{display:flex;flex-direction:column;gap:6px}
+.menu button{background:transparent;border:none;color:var(--muted);text-align:left;padding:10px;border-radius:8px;cursor:pointer;font-weight:700}
+.menu button.active{background:rgba(255,111,26,0.08);color:var(--text)}
+.main{flex:1}
+
+/* cards */
+.card{background:linear-gradient(180deg,#0f1416,#0c0f11);border-radius:10px;padding:12px;border:1px solid rgba(255,255,255,0.03);margin-bottom:12px}
+.topbar{display:flex;justify-content:space-between;align-items:center;padding:10px;border-radius:8px;background:linear-gradient(180deg,#0d1112,#0b0d0e);border:1px solid rgba(255,255,255,0.02)}
+.small-muted{color:var(--muted);font-size:13px}
+.balance{font-size:22px;font-weight:800}
+
+/* table, list */
+.table{width:100%;border-collapse:collapse;margin-top:8px}
+.table th,.table td{padding:8px;border-bottom:1px solid rgba(255,255,255,0.02);text-align:left;font-size:13px;color:var(--muted)}
+.activity-list div{margin-bottom:8px}
+
+/* chat */
+.chatlog{height:220px;overflow:auto;padding:12px;border-radius:10px;background:linear-gradient(180deg,#0c0d0f,#0b0c0f);border:1px solid rgba(255,255,255,0.02)}
+.bubble{padding:8px 12px;border-radius:10px;display:inline-block;margin:6px 0;max-width:80%}
+.u{background:#0b0c0f;border:1px solid rgba(255,255,255,0.02);color:var(--text)}
+.b{background:#111317;border:1px solid rgba(255,255,255,0.02);color:var(--muted)}
+
+/* notif panel */
+.notif-panel{position:fixed;right:18px;top:86px;width:360px;max-height:70vh;background:#0f1113;border-radius:12px;border:1px solid rgba(255,255,255,0.04);box-shadow:0 20px 40px rgba(2,6,10,0.6);overflow:auto;transform:translateY(-8px);opacity:0;pointer-events:none;transition:opacity .18s,transform .18s}
+.notif-panel.open{opacity:1;transform:translateY(0);pointer-events:auto}
+.notif-item{padding:10px;border-radius:8px;background:linear-gradient(180deg,#0c0d0f,#0b0c0f);border:1px solid rgba(255,255,255,0.02);display:flex;justify-content:space-between;gap:8px}
+
+/* modal & toast */
+.modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.5);z-index:220}
+.modal .card{width:520px}
+.toast{position:fixed;left:18px;bottom:18px;background:#111;padding:10px 12px;border-radius:8px;display:none}
+
+/* inputs */
+.input, textarea, select{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:var(--text)}
+
+/* responsive */
+@media(max-width:1000px){ .hero{grid-template-columns:1fr} .sidebar{display:none}.notif-panel{right:10px;width:92vw} .app-shell{flex-direction:column} }
+
+/* animations */
+@keyframes fadeUp { from{opacity:0; transform:translateY(16px)} to{opacity:1; transform:translateY(0)} }
+.fade-up{animation:fadeUp .8s both}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<header class="header">
+  <div class="brand">
+    <div class="logo">B</div>
+    <div>
+      <div style="font-weight:800">Brex-style MVP</div>
+      <div class="small-muted">Prototype</div>
+    </div>
+  </div>
+  <nav>
+    <a href="#features">Products</a>
+    <a href="#rewards">Rewards</a>
+    <button class="btn-cta" onclick="scrollToLogin()">Login</button>
+  </nav>
+</header>
+
+<!-- Hero -->
+<section class="hero">
+  <div>
+    <h1 class="h-title fade-up">Financial OS for Growing Companies — MVP</h1>
+    <p class="h-sub fade-up" style="animation-delay:80ms">Payments, custom notifications, AI-first support, 2FA and rewards — working prototype for presentation.</p>
+    <div style="display:flex;gap:10px" class="hero-cta fade-up" style="animation-delay:140ms">
+      <button class="btn-cta" onclick="scrollToLogin()">Try demo</button>
+      <button class="btn-cta" style="background:transparent;border:1px solid rgba(255,255,255,0.04)" onclick="showModal('How to use','Sign in with any email + password. A demo OTP will be shown in a popup for judges to test. Use Payments to earn points, Tickets to test AI-first support.')">How it works</button>
+    </div>
+  </div>
+  <div class="hero-illus fade-up" style="animation-delay:200ms">
+    <!-- small illustration -->
+    <svg width="380" height="220" viewBox="0 0 380 220" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="6" y="14" width="364" height="192" rx="12" fill="#071018"/>
+      <rect x="26" y="34" width="120" height="12" rx="6" fill="#0b1113"/>
+      <rect x="26" y="58" width="300" height="12" rx="6" fill="#0b1113"/>
+      <rect x="26" y="82" width="260" height="12" rx="6" fill="#0b1113"/>
+      <circle cx="320" cy="120" r="30" fill="#ff6f1a"/>
+      <text x="320" y="126" fill="#071018" font-size="14" font-weight="800" text-anchor="middle">B</text>
+    </svg>
+  </div>
+</section>
+
+<!-- Features -->
+<section id="features" class="features" aria-label="features">
+  <div class="feature-card fade-up"><i class="fa-solid fa-credit-card"></i><strong>Payments</strong><div class="small-muted">Fast, secure payouts</div></div>
+  <div class="feature-card fade-up" style="animation-delay:60ms"><i class="fa-solid fa-bell"></i><strong>Custom Notifications</strong><div class="small-muted">Pick only what you need</div></div>
+  <div class="feature-card fade-up" style="animation-delay:120ms"><i class="fa-solid fa-headset"></i><strong>AI Support</strong><div class="small-muted">AI-first auto-resolve</div></div>
+  <div class="feature-card fade-up" style="animation-delay:180ms"><i class="fa-solid fa-gift"></i><strong>Rewards</strong><div class="small-muted">Points & cashback</div></div>
+  <div class="feature-card fade-up" style="animation-delay:240ms"><i class="fa-solid fa-fire"></i><strong>Cash Burn</strong><div class="small-muted">Get actionable recommendations</div></div>
+</section>
+
+<!-- Rewards highlight -->
+<section id="rewards" class="rewards-hero fade-up" style="animation-delay:300ms">
+  <div>
+    <div style="font-weight:800">Rewards & Cashback</div>
+    <div class="small-muted">Earn <b>1 pt / $1</b>. Upgrade Premium to earn 2×. Redeem <b>1000 pts → $10</b>.</div>
+    <div style="margin-top:12px" class="progress"><div id="rewardBar" class="bar"></div></div>
+  </div>
+  <div style="text-align:right">
+    <div id="tierLabel" style="font-weight:800">Silver</div>
+    <div class="small-muted">Progress to next tier</div>
+  </div>
+</section>
+
+<!-- App section -->
+<section id="app" class="app-section">
+  <div class="app-shell">
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="side-logo">
+        <div class="logo">B</div>
+        <div>
+          <div style="font-weight:800">BrexDemo</div>
+          <div class="small-muted">MVP</div>
+        </div>
+      </div>
+
+      <nav class="menu" role="navigation">
+        <button id="menu_dashboard" class="active" data-view="dashboardView" onclick="navTo(this)">Dashboard</button>
+        <button id="menu_payments" data-view="paymentsView" onclick="navTo(this)">Payments</button>
+        <button id="menu_tickets" data-view="ticketsView" onclick="navTo(this)">Tickets</button>
+        <button id="menu_chat" data-view="chatbotView" onclick="navTo(this)">AI Assistant</button>
+        <button id="menu_premium" data-view="premiumView" onclick="navTo(this)">Premium</button>
+        <button id="menu_notifications" data-view="notifSettingsView" onclick="navTo(this)">Notification Settings</button>
+        <button id="menu_rewards" data-view="rewardsView" onclick="navTo(this)">Rewards</button>
+        <button id="menu_burn" data-view="burnView" onclick="navTo(this)">Cash Burn</button>
+        <button id="menu_logout" onclick="doLogout()" style="margin-top:14px;background:transparent;border:1px solid rgba(255,255,255,0.03);padding:8px;border-radius:8px">Logout</button>
+      </nav>
+
+      <div style="margin-top:auto;font-size:13px;color:var(--muted)">
+        Logged in as <div id="userEmailSide" style="font-weight:700;margin-top:6px">—</div>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <main class="main">
+      <!-- Login area -->
+      <div id="loginArea" class="card" style="display:block">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-weight:800;font-size:18px">Sign in to Brex Demo</div>
+            <div class="small-muted" style="margin-top:6px">Enter email & password. Demo OTP shown in a popup for testing.</div>
+          </div>
+        </div>
+
+        <div style="margin-top:12px">
+          <label class="small-muted">Email</label>
+          <input id="loginEmail" class="input" placeholder="you@company.com" />
+          <label class="small-muted" style="margin-top:8px">Password</label>
+          <input id="loginPassword" class="input" type="password" placeholder="password" />
+          <div style="display:flex;gap:8px;margin-top:12px">
+            <button id="btnLogin" onclick="startLogin()">Sign in</button>
+            <button onclick="autoDemo()" class="small-muted" style="background:transparent;border:1px solid rgba(255,255,255,0.03);padding:8px;border-radius:8px">Auto Demo</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- OTP area -->
+      <div id="otpArea" class="card" style="display:none">
+        <div style="font-weight:800">Two-Step Verification</div>
+        <div class="small-muted" style="margin-top:6px">Enter the 6-digit code sent to your email. (Demo displays it in a popup)</div>
+        <div style="display:flex;gap:8px;margin-top:10px">
+          <input id="otpInput" class="input" placeholder="Enter OTP"/>
+          <button onclick="verifyOtp()">Verify</button>
+          <button onclick="resendOtp()" class="small-muted" style="background:transparent;border:1px solid rgba(255,255,255,0.03);padding:8px;border-radius:8px">Resend</button>
+        </div>
+      </div>
+
+      <!-- Dashboard view -->
+      <div id="dashboardView" class="card" style="display:none">
+        <div class="topbar">
+          <div>
+            <div class="small-muted">Available balance</div>
+            <div class="balance" id="balance">$125,430.75</div>
+            <div class="small-muted">Business • USD</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px">
+            <div class="small-muted">Net cashflow (30d)</div>
+            <div style="font-weight:800" id="kpi_month">+$12,420</div>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:2fr 360px;gap:16px;margin-top:12px">
+          <section>
+            <div class="card">
+              <h4 style="margin:0">Recent Transactions</h4>
+              <table class="table" id="txTable">
+                <thead><tr><th>Date</th><th>Merchant</th><th>Category</th><th>Amount</th></tr></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+
+            <div class="card" style="margin-top:12px">
+              <h4 style="margin:0">Cash Burn Monitor</h4>
+              <p id="burnMessage" class="small-muted" style="margin-top:8px">Monitoring monthly burn...</p>
+              <div id="burnAdvice" style="margin-top:10px"></div>
+            </div>
+          </section>
+
+          <aside>
+            <div class="card">
+              <h4 style="margin:0">Activity Feed</h4>
+              <div class="small-muted" style="margin-top:6px">Recent actions</div>
+              <div id="activityLog" style="margin-top:8px;color:var(--muted)" class="activity-list">No activity yet.</div>
+            </div>
+
+            <div class="card" style="margin-top:12px">
+              <h4 style="margin:0">Rewards</h4>
+              <div style="margin-top:8px"><strong id="rewardsBalance">0 pts</strong><div class="small-muted" style="margin-top:6px">Earn 1 pt / $1 — Premium doubles points</div></div>
+              <div style="margin-top:10px;display:flex;gap:8px">
+                <button onclick="redeemPoints()">Redeem</button>
+                <button onclick="showRedeemInfo()" class="small-muted" style="background:transparent;border:1px solid rgba(255,255,255,0.03);padding:8px;border-radius:8px">How redeem works</button>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </div>
+
+      <!-- Payments view -->
+      <div id="paymentsView" class="card" style="display:none">
+        <h3>Payments</h3>
+        <label class="small-muted">Payee</label><input id="payee" class="input" placeholder="Acme Inc."/>
+        <label class="small-muted">Amount (USD)</label><input id="amount" class="input" type="number" step="0.01"/>
+        <label class="small-muted">Note</label><input id="note" class="input"/>
+        <div style="display:flex;gap:8px;margin-top:10px">
+          <button onclick="sendPayment()">Send Payment</button>
+          <button onclick="seedActivity()" class="small-muted" style="background:transparent;border:1px solid rgba(255,255,255,0.03);padding:8px;border-radius:8px">Seed Activity</button>
+        </div>
+      </div>
+
+      <!-- Tickets view -->
+      <div id="ticketsView" class="card" style="display:none">
+        <h3>Support Tickets</h3>
+        <label class="small-muted">Subject</label><input id="tSubject" class="input" placeholder="Card not working"/>
+        <label class="small-muted" style="margin-top:8px">Description</label><textarea id="tDesc" class="input" rows="4"></textarea>
+        <div style="display:flex;gap:8px;margin-top:10px">
+          <button onclick="createTicket()">Create Ticket</button>
+          <label style="margin-left:auto" class="small-muted"><input id="autoResolve" type="checkbox" /> Auto-resolve with AI</label>
+        </div>
+
+        <div style="margin-top:12px">
+          <h4>Tickets</h4>
+          <table class="table" id="ticketTable"><thead><tr><th>ID</th><th>Subject</th><th>Status</th><th>Actions</th></tr></thead><tbody></tbody></table>
+        </div>
+      </div>
+
+      <!-- Chatbot view -->
+      <div id="chatbotView" class="card" style="display:none">
+        <h3>AI Assistant</h3>
+        <div id="chatLog" class="chatlog"></div>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <input id="chatInput" class="input" placeholder="Try: 'How long to resolve my issue?'"/>
+          <button onclick="sendChat()">Send</button>
+        </div>
+        <div class="small-muted" style="margin-top:8px">Examples: "I forgot my password", "What is Brex Premium?", "How to reduce cash burn"</div>
+      </div>
+
+      <!-- Premium view -->
+      <div id="premiumView" class="card" style="display:none">
+        <h3>Brex Premium</h3>
+        <p>Premium: faster payouts, analytics, dedicated support, and 2× rewards.</p>
+        <div style="display:flex;gap:8px;margin-top:10px">
+          <button onclick="activatePremium()">Activate Premium (demo)</button>
+          <button onclick="showModal('Premium Info','Premium doubles your points and gives priority support (demo).')" class="small-muted" style="background:transparent;border:1px solid rgba(255,255,255,0.03);padding:8px;border-radius:8px">More info</button>
+        </div>
+      </div>
+
+      <!-- Notification Settings -->
+      <div id="notifSettingsView" class="card" style="display:none">
+        <h3>Notification Preferences</h3>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px">
+          <label><input type="checkbox" id="pref_payments" /> Payment Alerts</label>
+          <label><input type="checkbox" id="pref_security" /> Security Updates</label>
+          <label><input type="checkbox" id="pref_rewards" /> Rewards & Offers</label>
+          <label><input type="checkbox" id="pref_offers" /> Promotions & Offers</label>
+        </div>
+        <div style="margin-top:12px;display:flex;gap:8px">
+          <button onclick="saveNotifPrefs()">Save Preferences</button>
+          <button onclick="navTo(document.getElementById('menu_dashboard'))" class="small-muted" style="background:transparent;border:1px solid rgba(255,255,255,0.03);padding:8px;border-radius:8px">Cancel</button>
+        </div>
+      </div>
+
+      <!-- Rewards view -->
+      <div id="rewardsView" class="card" style="display:none">
+        <h3>Your Rewards</h3>
+        <p><strong id="rewardsBalanceLarge">0 pts</strong></p>
+        <div class="small-muted">Tier: <span id="tierLabelLarge">Silver</span></div>
+        <div style="margin-top:12px" class="progress"><div id="rewardBarLarge" class="bar"></div></div>
+        <div style="margin-top:12px;display:flex;gap:8px"><button onclick="redeemPoints()">Redeem 1000 pts</button></div>
+      </div>
+
+      <!-- Cash Burn view -->
+      <div id="burnView" class="card" style="display:none">
+        <h3>Cash Burn Monitor</h3>
+        <p id="burnStatus" class="small-muted">Analyzing spend...</p>
+        <div style="margin-top:8px" class="progress"><div id="burnBar" class="bar" style="background:#ff5b5b;width:10%"></div></div>
+        <div id="burnTips" style="margin-top:10px" class="small-muted"></div>
+      </div>
+
+    </main>
+  </div>
+</section>
+
+<!-- Notifications panel -->
+<div id="notifPanel" class="notif-panel" aria-hidden="true">
+  <header style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-bottom:1px solid rgba(255,255,255,0.02)">
+    <strong>Notifications</strong>
+    <div><button onclick="clearAllNotifications()" class="small-muted" style="background:transparent;border:1px solid rgba(255,255,255,0.03);padding:6px;border-radius:8px">Clear all</button></div>
+  </header>
+  <div id="notifList" style="padding:12px;display:flex;flex-direction:column;gap:8px"></div>
+</div>
+
+<!-- Modal & toast -->
+<div id="modal" class="modal"><div class="card"><h3 id="modalTitle">Notice</h3><p id="modalBody" class="small-muted"></p><div style="text-align:right;margin-top:12px"><button onclick="closeModal()">OK</button></div></div></div>
+<div id="toast" class="toast"></div>
+
+<footer style="padding:22px 32px;color:var(--muted);text-align:center">© 2025 Demo Finance • Prototype for hackathon</footer>
+
+<script>
+/* ====== Storage helpers ====== */
+const localStore = {
+  get(k,d){ try{ return JSON.parse(localStorage.getItem(k)) ?? d }catch(e){ return d } },
+  set(k,v){ localStorage.setItem(k, JSON.stringify(v)); }
+}
+
+/* ====== App state ====== */
+let state = {
+  notifPrefs: localStore.get('notifPrefs', {payments:true, security:true, rewards:true, offers:true}),
+  notifications: localStore.get('notifications', []),
+  transactions: localStore.get('transactions', [
+    {date:'2025-08-01', merchant:'Apple Store', category:'Hardware', amount:1299},
+    {date:'2025-08-03', merchant:'Uber', category:'Transport', amount:24.9},
+    {date:'2025-08-08', merchant:'Google Cloud', category:'Cloud', amount:512}
+  ]),
+  tickets: localStore.get('tickets', [{id:1,subject:'Card declined',status:'open',desc:'Declined at POS'}]),
+  rewards: localStore.get('rewards', 12450),
+  premiumActive: localStore.get('premiumActive', false),
+  activity: localStore.get('activity', []),
+  session: localStore.get('session', null),
+  otp: null,
+  otpExpiresAt: null
+};
+
+/* ====== UI utilities ====== */
+function showToast(msg,ms=2500){ const t=document.getElementById('toast'); t.textContent=msg; t.style.display='block'; setTimeout(()=>t.style.display='none',ms); }
+function showModal(title, body){ document.getElementById('modalTitle').textContent = title; document.getElementById('modalBody').textContent = body; document.getElementById('modal').style.display='grid'; }
+function closeModal(){ document.getElementById('modal').style.display='none'; }
+function saveAll(){ localStore.set('notifPrefs', state.notifPrefs); localStore.set('notifications', state.notifications); localStore.set('transactions', state.transactions); localStore.set('tickets', state.tickets); localStore.set('rewards', state.rewards); localStore.set('premiumActive', state.premiumActive); localStore.set('activity', state.activity); localStore.set('session', state.session); }
+
+/* ====== Page navigation ====== */
+function scrollToLogin(){ document.getElementById('app').scrollIntoView({behavior:'smooth'}); document.getElementById('loginEmail').focus(); }
+function navTo(btn){ // hide views, show requested
+  document.querySelectorAll('#dashboardView,#paymentsView,#ticketsView,#chatbotView,#premiumView,#notifSettingsView,#rewardsView,#burnView').forEach(el=>el.style.display='none');
+  const view = btn.dataset.view;
+  const target = document.getElementById(view);
+  if(target) target.style.display='block';
+  document.querySelectorAll('.menu button').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+/* ====== Login & OTP ====== */
+function startLogin(){
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass = document.getElementById('loginPassword').value.trim();
+  if(!email || !pass){ alert('Enter email and password'); return; }
+  // create session stub (will require OTP)
+  state.session = { email, premium: state.premiumActive, multiplier: state.premiumActive ? 2 : 1, loggedAt: null };
+  generateOtp();
+  document.getElementById('loginArea').style.display='none';
+  document.getElementById('otpArea').style.display='block';
+}
+function autoDemo(){
+  document.getElementById('loginEmail').value='demo@company.com';
+  document.getElementById('loginPassword').value='demo';
+  startLogin();
+}
+function generateOtp(){
+  const code = Math.floor(100000 + Math.random()*900000).toString();
+  state.otp = code;
+  state.otpExpiresAt = Date.now() + 5*60*1000; // 5 minutes
+  // For demo purposes: show OTP in alert so judges can copy
+  alert('Demo OTP (for testing): ' + code);
+}
+function resendOtp(){ generateOtp(); showToast('New OTP generated (demo)'); }
+function verifyOtp(){
+  const val = (document.getElementById('otpInput').value||'').trim();
+  if(!state.otp){ alert('No OTP generated. Click Resend.'); return; }
+  if(Date.now() > state.otpExpiresAt){ alert('OTP expired. Resend.'); return; }
+  if(val === state.otp){
+    // grant access
+    state.session.loggedAt = new Date().toISOString();
+    state.session.multiplier = state.premiumActive ? 2 : 1;
+    localStore.set('session', state.session);
+    document.getElementById('otpArea').style.display='none';
+    document.getElementById('dashboardView').style.display='block';
+    document.getElementById('userEmailSide').textContent = state.session.email;
+    // init dashboard data
+    initAfterLogin();
+    addActivity('🔐 Logged in (2FA verified)');
+    giveDailyBonus();
+    showToast('Login successful');
+    saveAll();
+  } else {
+    alert('Incorrect OTP');
+  }
+}
+function doLogout(){
+  state.session = null;
+  state.otp = null;
+  state.otpExpiresAt = null;
+  localStore.set('session', null);
+  // hide views, show login
+  document.getElementById('dashboardView').style.display='none';
+  document.getElementById('paymentsView').style.display='none';
+  document.getElementById('ticketsView').style.display='none';
+  document.getElementById('chatbotView').style.display='none';
+  document.getElementById('premiumView').style.display='none';
+  document.getElementById('notifSettingsView').style.display='none';
+  document.getElementById('rewardsView').style.display='none';
+  document.getElementById('burnView').style.display='none';
+  document.getElementById('loginArea').style.display='block';
+  document.getElementById('otpArea').style.display='none';
+  document.getElementById('loginEmail').value='';
+  document.getElementById('loginPassword').value='';
+  document.getElementById('otpInput').value='';
+  document.getElementById('userEmailSide').textContent = '—';
+  addActivity('👋 Logged out');
+  showToast('Logged out. Login requires 2FA on next sign-in.');
+  saveAll();
+}
+
+/* ====== Activity logging ====== */
+function addActivity(text){
+  state.activity.unshift({time:new Date().toLocaleTimeString(), text});
+  if(state.activity.length>300) state.activity.pop();
+  localStore.set('activity', state.activity);
+  renderActivity();
+}
+function renderActivity(){
+  const el = document.getElementById('activityLog');
+  el.innerHTML = state.activity.map(a=>`<div>${a.time} • ${a.text}</div>`).join('') || '<div class="small-muted">No activity yet.</div>';
+}
+
+/* ====== Notifications (with preferences) ====== */
+function pushNotification(n){
+  // n = {type, title, body}
+  // only push if type enabled in prefs
+  const prefs = state.notifPrefs;
+  if(n.type === 'payment' && !prefs.payments) return;
+  if(n.type === 'security' && !prefs.security) return;
+  if(n.type === 'rewards' && !prefs.rewards) return;
+  if(n.type === 'offers' && !prefs.offers) return;
+  n.id = Date.now() + Math.floor(Math.random()*1000);
+  n.time = new Date().toISOString();
+  state.notifications.unshift(n);
+  localStore.set('notifications', state.notifications);
+  renderNotificationsPanel();
+  // show toast briefly
+  showToast(n.title + ': ' + n.body, 3000);
+}
+function renderNotificationsPanel(){
+  const c = document.getElementById('notifList');
+  if(!c) return;
+  c.innerHTML = state.notifications.map(n=>`<div class="notif-item"><div><strong>${n.title}</strong><div class="small-muted">${n.body}</div><div class="small-muted" style="margin-top:6px">${new Date(n.time).toLocaleString()}</div></div><div style="display:flex;flex-direction:column;gap:6px"><button onclick="markNotifRead(${n.id})" class="small-muted" style="background:transparent;border:1px solid rgba(255,255,255,0.03);padding:6px;border-radius:6px">Mark</button><button onclick="dismissNotif(${n.id})" class="small-muted" style="background:transparent;border:1px solid rgba(255,255,255,0.03);padding:6px;border-radius:6px">Dismiss</button></div></div>`).join('') || '<div class="small-muted" style="padding:12px">No notifications</div>';
+}
+function markNotifRead(id){ const n = state.notifications.find(x=>x.id===id); if(n) n.read = true; localStore.set('notifications', state.notifications); renderNotificationsPanel(); }
+function dismissNotif(id){ state.notifications = state.notifications.filter(x=>x.id!==id); localStore.set('notifications', state.notifications); renderNotificationsPanel(); }
+function clearAllNotifications(){ state.notifications = []; localStore.set('notifications', state.notifications); renderNotificationsPanel(); showToast('Notifications cleared'); }
+
+/* ====== Notification preferences UI ====== */
+function openNotif(){ // toggles panel
+  document.getElementById('notifPanel').classList.toggle('open');
+  renderNotificationsPanel();
+}
+function loadNotifPrefsToUI(){
+  document.getElementById('pref_payments').checked = state.notifPrefs.payments;
+  document.getElementById('pref_security').checked = state.notifPrefs.security;
+  document.getElementById('pref_rewards').checked = state.notifPrefs.rewards;
+  document.getElementById('pref_offers').checked = state.notifPrefs.offers;
+}
+function saveNotifPrefs(){
+  state.notifPrefs.payments = document.getElementById('pref_payments').checked;
+  state.notifPrefs.security = document.getElementById('pref_security').checked;
+  state.notifPrefs.rewards = document.getElementById('pref_rewards').checked;
+  state.notifPrefs.offers = document.getElementById('pref_offers').checked;
+  localStore.set('notifPrefs', state.notifPrefs);
+  addActivity('🔔 Notification preferences updated');
+  showModal('✅ Notification preferences updated','Your preferences have been saved. A trial notification will be shown.');
+  // trial run: show a demo notif of types enabled (choose first enabled)
+  setTimeout(()=> {
+    // construct demo notif
+    const available = [];
+    if(state.notifPrefs.payments) available.push({type:'payment', title:'Payment test', body:'This is a payment test notification.'});
+    if(state.notifPrefs.security) available.push({type:'security', title:'Security test', body:'This is a security notification test.'});
+    if(state.notifPrefs.rewards) available.push({type:'rewards', title:'Rewards test', body:'You earned test points.'});
+    if(state.notifPrefs.offers) available.push({type:'offers', title:'Offers test', body:'Here is a sample offer.'});
+    if(available.length) pushNotification(available[0]);
+    else showToast('No notification types enabled — nothing to demo.');
+  }, 700);
+}
+
+/* ====== Transactions & payments ====== */
+function renderTransactions(){ const tb = document.querySelector('#txTable tbody'); if(!tb) return; tb.innerHTML = state.transactions.slice(0,50).map(t=>`<tr><td>${t.date}</td><td>${t.merchant}</td><td>${t.category}</td><td>$${Number(t.amount).toFixed(2)}</td></tr>`).join(''); }
+function sendPayment(){
+  const payee = (document.getElementById('payee').value||'').trim();
+  const amount = parseFloat(document.getElementById('amount').value);
+  const note = (document.getElementById('note').value||'').trim();
+  if(!payee || !amount || amount<=0){ alert('Enter payee and valid amount'); return; }
+  const tx = { date: new Date().toISOString().slice(0,10), merchant: payee, category:'Transfer', amount };
+  state.transactions.unshift(tx);
+  localStore.set('transactions', state.transactions);
+  renderTransactions();
+  addActivity(`💳 Payment: ${payee} $${amount.toFixed(2)}`);
+  // award rewards respecting multiplier
+  const multiplier = (state.premiumActive ? 2 : 1);
+  state.rewards += Math.round(amount) * multiplier;
+  localStore.set('rewards', state.rewards);
+  // push notification if prefs allow
+  pushNotification({type:'payment', title:'Payment processed', body:`${payee} • $${amount.toFixed(2)}`});
+  runCashBurnCheck();
+  document.getElementById('payee').value=''; document.getElementById('amount').value=''; document.getElementById('note').value='';
+  renderRewards();
+}
+
+/* ====== Tickets ====== */
+function renderTickets(){ const tbody = document.querySelector('#ticketTable tbody'); if(!tbody) return; tbody.innerHTML = state.tickets.map(t=>`<tr><td>#${t.id}</td><td>${t.subject}</td><td>${t.status}</td><td><button onclick="resolveTicket(${t.id})" class="small-muted" style="background:transparent;border:1px solid rgba(255,255,255,0.03);padding:6px;border-radius:6px">Resolve</button></td></tr>`).join(''); }
+function createTicket(){
+  const subject = (document.getElementById('tSubject').value||'').trim();
+  const desc = (document.getElementById('tDesc').value||'').trim();
+  const tryAuto = document.getElementById('autoResolve').checked;
+  if(!subject || !desc){ alert('Subject and description required'); return; }
+  const id = (state.tickets.length ? Math.max(...state.tickets.map(t=>t.id)) : 0) + 1;
+  const ticket = { id, subject, desc, status:'open', created: new Date().toISOString() };
+  state.tickets.unshift(ticket);
+  localStore.set('tickets', state.tickets);
+  renderTickets();
+  addActivity(`🛠 Ticket created: ${subject}`);
+  pushNotification({type:'support', title:'Ticket created', body:`#${id} ${subject}`});
+  // AI attempt
+  if(tryAuto){
+    const result = aiAttemptResolution(subject, desc);
+    if(result.resolved){
+      setTimeout(()=>{ resolveTicket(id); showModal('Auto-resolved', result.answer); pushNotification({type:'support', title:'Ticket auto-resolved', body:`#${id} ${subject}`}); }, 700);
+    } else {
+      setTimeout(()=>{ showModal('Escalated', `AI suggestion: ${result.answer}. Escalating to human support.`); pushNotification({type:'support', title:'Ticket escalated', body:`#${id} ${subject}`}); }, 700);
+    }
+  } else {
+    showModal('Ticket created', `Ticket #${id} created. Support will follow up.`);
+  }
+  document.getElementById('tSubject').value=''; document.getElementById('tDesc').value='';
+  renderTickets();
+}
+function aiAttemptResolution(subject,desc){
+  const q = (subject + ' ' + desc).toLowerCase();
+  if(/password|forgot/.test(q)) return {resolved:true, answer:'Password reset link sent to your email (demo).'};
+  if(/declined|declin/.test(q)) return {resolved:false, answer:'Check card limit and balance. Escalating if persists.'};
+  if(/refund|chargeback/.test(q)) return {resolved:false, answer:'Refund workflow initiated. Support will review.'};
+  return {resolved:false, answer:'AI could not fully resolve; raising to human support.'};
+}
+function resolveTicket(id){
+  const t = state.tickets.find(x=>x.id===id);
+  if(t){ t.status='resolved'; localStore.set('tickets', state.tickets); renderTickets(); addActivity(`✅ Ticket #${id} resolved`); pushNotification({type:'support', title:'Ticket resolved', body:`#${id} ${t.subject}`}); }
+}
+
+/* ====== Chatbot ====== */
+function sendChat(){
+  const q = (document.getElementById('chatInput').value||'').trim();
+  if(!q) return;
+  const log = document.getElementById('chatLog');
+  const usr = document.createElement('div'); usr.className='bubble u'; usr.textContent = 'You: ' + q; log.appendChild(usr);
+  addActivity(`🤖 Chat asked: ${q}`);
+  document.getElementById('chatInput').value='';
+  setTimeout(()=>{
+    const reply = botReply(q);
+    const bot = document.createElement('div'); bot.className='bubble b'; bot.textContent = 'Bot: ' + reply; log.appendChild(bot);
+    log.scrollTop = log.scrollHeight;
+    addActivity('🤖 Chat replied');
+    // some answers trigger notifications (respect prefs)
+    if(/redeem|points|reward/.test(q)) pushNotification({type:'rewards', title:'Rewards info', body:`You have ${state.rewards} pts`});
+  }, 300);
+}
+function botReply(text){
+  const t = text.toLowerCase();
+  if(/forgot.*password|i forgot|reset password/.test(t)) return 'Click "Forgot password" on sign-in; we sent a reset link (demo).';
+  if(/how much time.*resolve|time to resolve|how long/.test(t)) return 'High-priority issues: ~24 hours. Lower priority: 48–72 hours.';
+  if(/what.*premium|brex premium/.test(t)) return 'Brex Premium: faster payments, advanced analytics, priority support, and 2× rewards.';
+  if(/increase.*credit|credit limit/.test(t)) return 'To request a credit increase, go to Settings → Credit Management (demo).';
+  if(/rewards|points|cashback/.test(t)) return `You have ${state.rewards} pts. Redeem 1000 pts for $10.`;
+  if(/cash burn|burn|spend/.test(t)) return 'Cut non-core projects, focus on profitable customers, and promote premium features.';
+  return "I can help with tickets, password reset, rewards, notifications, and premium. I'll escalate to support if needed.";
+}
+
+/* ====== Rewards ====== */
+function renderRewards(){
+  document.getElementById('rewardsBalance').textContent = state.rewards + ' pts';
+  document.getElementById('rewardsBalanceLarge').textContent = state.rewards + ' pts';
+  const progressPercent = Math.min(100, (state.rewards % 1000) / 10); // scale 0-100
+  document.getElementById('rewardBar').style.width = progressPercent + '%';
+  document.getElementById('rewardBarLarge').style.width = progressPercent + '%';
+  const tier = state.rewards >= 5000 ? 'Platinum' : (state.rewards >= 1000 ? 'Gold' : 'Silver');
+  document.getElementById('tierLabel').textContent = tier;
+  document.getElementById('tierLabelLarge').textContent = tier;
+}
+function redeemPoints(){ if(state.rewards >= 1000){ state.rewards -= 1000; localStore.set('rewards', state.rewards); renderRewards(); addActivity('💸 Redeemed 1000 pts → $10 cashback (demo)'); pushNotification({type:'rewards', title:'Redeemed', body:'1000 pts → $10 cashback (demo)'}); showModal('Redeemed','1000 pts redeemed for $10 cashback (demo).'); } else showModal('Not enough points','You need 1000 pts to redeem $10.'); }
+function showRedeemInfo(){ showModal('Redeem Info','Redeem 1000 pts for $10 cashback (demo).'); }
+
+/* ====== Premium ====== */
+function activatePremium(){ state.premiumActive = true; localStore.set('premiumActive', true); addActivity('👑 Premium activated'); pushNotification({type:'premium', title:'Premium activated', body:'You now earn 2× rewards (demo)'}); showModal('Premium Activated','Premium active — you now earn 2× rewards (demo)'); renderRewards(); }
+
+/* ====== Cash Burn monitor ====== */
+function runCashBurnCheck(){
+  const tx = state.transactions;
+  const last60 = tx.slice(0,60).map(t=>Number(t.amount)||0);
+  const last30 = last60.slice(0,30).reduce((a,b)=>a+b,0);
+  const prev30 = last60.slice(30,60).reduce((a,b)=>a+b,0);
+  const msgEl = document.getElementById('burnMessage'), adviceEl = document.getElementById('burnAdvice'), statusEl = document.getElementById('burnStatus'), tipsEl = document.getElementById('burnTips'), burnBar = document.getElementById('burnBar');
+  if(prev30 === 0 && last30 > 0){
+    msgEl.textContent = 'High cash burn detected (initial period)';
+    adviceEl.innerHTML = `<div style="border-left:4px solid #ff5b5b;padding-left:10px"><strong>Action:</strong> Cut non-core projects; focus on profitable clients; promote premium features.</div>`;
+    statusEl.textContent = 'High burn detected';
+    tipsEl.innerHTML = 'Recommendation: review non-core spend & prioritize profitable customers.';
+    burnBar.style.width = '85%';
+    pushNotification({type:'alerts', title:'High cash burn', body:'Initial period high burn detected. Review recommended actions.'});
+  } else {
+    const growth = prev30 === 0 ? 0 : ((last30 - prev30)/prev30)*100;
+    if(growth > 30){
+      msgEl.textContent = `Cash burn increased ${Math.round(growth)}% vs previous month`;
+      adviceEl.innerHTML = `<div style="border-left:4px solid #ff5b5b;padding-left:10px"><strong>Recommendations:</strong><ul><li>Cut non-core projects</li><li>Focus on enterprise customers</li><li>Promote paid premium features</li></ul></div>`;
+      statusEl.textContent = 'Burn rising';
+      tipsEl.innerHTML = 'Action recommended: cost review, promote premium.';
+      burnBar.style.width = '65%';
+      pushNotification({type:'alerts', title:'High cash burn', body:'Spending increased >30% — check recommendations.'});
+    } else {
+      msgEl.textContent = 'Monthly burn is within expected range.';
+      adviceEl.innerHTML = `<div class="small-muted">No immediate action required.</div>`;
+      statusEl.textContent = 'Stable';
+      tipsEl.innerHTML = 'Continue monitoring.';
+      burnBar.style.width = '25%';
+    }
+  }
+}
+
+/* ====== Small helpers and seeding ====== */
+function seedActivity(){ // create a demo transaction + rewards
+  const merchants = ['Figma','AWS','Slack','Notion','Zoom','Stripe','SendGrid'];
+  const merchant = merchants[Math.floor(Math.random()*merchants.length)];
+  const amt = Math.round(Math.random()*900+20);
+  state.transactions.unshift({date:new Date().toISOString().slice(0,10), merchant, category:'SaaS', amount:amt});
+  localStore.set('transactions', state.transactions);
+  renderTransactions();
+  addActivity(`Demo transaction: ${merchant} $${amt}`);
+  // award rewards directly
+  const mult = (state.premiumActive ? 2 : 1);
+  state.rewards += Math.round(amt) * mult;
+  localStore.set('rewards', state.rewards);
+  renderRewards();
+  runCashBurnCheck();
+}
+
+/* ====== helpers used after login ====== */
+function initAfterLogin(){
+  renderTransactions();
+  renderTickets();
+  renderActivity();
+  renderNotificationsPanel();
+  renderRewards();
+  runCashBurnCheck();
+  // set dashboard active menu
+  document.querySelectorAll('.menu button').forEach(b=>b.classList.remove('active'));
+  const db = document.getElementById('menu_dashboard'); if(db) db.classList.add('active');
+  // show dashboard view
+  document.querySelectorAll('#dashboardView,#paymentsView,#ticketsView,#chatbotView,#premiumView,#notifSettingsView,#rewardsView,#burnView').forEach(x=>x.style.display='none');
+  document.getElementById('dashboardView').style.display='block';
+}
+
+/* ====== daily bonus ====== */
+function giveDailyBonus(){
+  const lastDaily = localStore.get('lastDaily', null);
+  const today = new Date().toISOString().slice(0,10);
+  if(lastDaily !== today){
+    state.rewards += 50;
+    addActivity('🎁 Daily login bonus: 50 pts');
+    localStore.set('lastDaily', today);
+    localStore.set('rewards', state.rewards);
+    renderRewards();
+    // respects user's notif prefs
+    pushNotification({type:'rewards', title:'Daily bonus', body:'+50 pts credited'});
+    showModal('Daily Bonus', '50 points credited to your account (demo).');
+  }
+}
+
+/* ====== mount (initial render) ====== */
+(function mount(){
+  // load UI prefs
+  loadNotifPrefsToUI();
+  renderRewards();
+  renderTransactions();
+  renderTickets();
+  renderActivity();
+  renderNotificationsPanel();
+  runCashBurnCheck();
+  // fill reward progress animation
+  setTimeout(()=>{ document.getElementById('rewardBar').style.width = Math.min(100, (state.rewards % 1000)/10) + '%'; document.getElementById('rewardBarLarge').style.width = Math.min(100, (state.rewards % 1000)/10) + '%'; }, 500);
+})();
+
+/* ====== functions exposed to global scope used by UI ====== */
+window.scrollToLogin = scrollToLogin;
+window.startLogin = startLogin;
+window.autoDemo = autoDemo;
+window.generateOtp = generateOtp;
+window.verifyOtp = verifyOtp;
+window.resendOtp = resendOtp;
+window.doLogout = doLogout;
+window.navTo = navTo;
+window.openNotif = openNotif;
+window.clearAllNotifications = clearAllNotifications;
+window.saveNotifPrefs = saveNotifPrefs;
+window.sendPayment = sendPayment;
+window.seedActivity = seedActivity;
+window.createTicket = createTicket;
+window.sendChat = sendChat;
+window.redeemPoints = redeemPoints;
+window.showRedeemInfo = showRedeemInfo;
+window.activatePremium = activatePremium;
+window.resolveTicket = resolveTicket;
+window.markNotifRead = markNotifRead;
+window.dismissNotif = dismissNotif;
+window.renderNotificationsPanel = renderNotificationsPanel;
+window.renderNotifications = renderNotificationsPanel;
+window.renderTickets = renderTickets;
+window.renderTransactions = renderTransactions;
+window.renderActivity = renderActivity;
+window.renderRewards = renderRewards;
+window.runCashBurnCheck = runCashBurnCheck;
+
+/* ====== quick helper: load notif prefs into UI ====== */
+function loadNotifPrefsToUI(){
+  document.getElementById('pref_payments').checked = state.notifPrefs.payments;
+  document.getElementById('pref_security').checked = state.notifPrefs.security;
+  document.getElementById('pref_rewards').checked = state.notifPrefs.rewards;
+  document.getElementById('pref_offers').checked = state.notifPrefs.offers;
+}
+
+/* ====== small UX helpers ====== */
+function showModal(title, body){ document.getElementById('modalTitle').textContent = title; document.getElementById('modalBody').textContent = body; document.getElementById('modal').style.display='grid'; }
+function closeModal(){ document.getElementById('modal').style.display='none'; }
+function showToast(msg){ const t=document.getElementById('toast'); t.textContent = msg; t.style.display = 'block'; setTimeout(()=> t.style.display='none', 2500); }
+
+</script>
+</body>
+</html>
